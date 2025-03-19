@@ -1,7 +1,40 @@
-fastapi==0.110.0
-uvicorn==0.27.1
-itsdangerous==2.1.2
-google-auth==2.27.0
-python-multipart==0.0.9
-google-auth-oauthlib==1.2.0
-google-api-python-client==2.117.0
+# FastAPI and web server
+fastapi
+uvicorn
+pydantic
+
+# Authentication and security
+firebase-admin
+python-jose
+
+# Environment variables
+python-dotenv
+
+# Database
+pymongo
+motor
+
+# LangChain and LangGraph
+langchain
+langchain-openai
+langchain-core
+langchain-community
+langgraph
+
+# OpenAI API
+openai
+
+# Web scraping and extraction
+trafilatura
+
+# GitHub API
+PyGithub
+
+# Asynchronous HTTP
+aiohttp
+
+# Type annotations
+typing-extensions
+
+# Middleware
+starlette
