@@ -35,8 +35,10 @@ except Exception as e:
 try:
     with open(creds_path, 'r') as file:
         creds_json = json.loads(file.read())
+    
+    creds_dict = json.loads(creds_json)
 
-    cred = credentials.Certificate(creds_json)
+    cred = credentials.Certificate(creds_dict)
     firebase_app = firebase_admin.initialize_app(cred)
     print("Firebase initialized successfully")
 except Exception as e:
