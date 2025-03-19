@@ -1,4 +1,5 @@
 import os
+import json
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from typing import Dict, List, Optional
@@ -32,7 +33,10 @@ except Exception as e:
 
 # Initialize Firebase Admin
 try:
-    cred = credentials.Certificate(creds_path)
+    with open(creds_path, 'r') as file:
+        creds_json = json.loads(file.read())
+
+    cred = credentials.Certificate(creds_json)
     firebase_app = firebase_admin.initialize_app(cred)
     print("Firebase initialized successfully")
 except Exception as e:
