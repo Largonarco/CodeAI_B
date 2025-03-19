@@ -21,7 +21,7 @@ async_mongo_client = None
 MONGODB_URI = os.getenv("MONGODB_URI")
 # Firebase Creds
 current_dir = os.path.dirname(os.path.abspath(__file__))
-creds_path = os.path.join(current_dir, "credentials.json")
+creds_path = os.path.join(current_dir, "credentials.txt")
 
 # Initialize MongoDB
 try:
