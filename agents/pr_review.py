@@ -82,38 +82,56 @@ def create_code_review_workflow():
     llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
     
     async def fetch_files(state: CodeReviewState) -> CodeReviewState:
-        """Fetch files from the PR"""
+        """Fetch files from the PR and convert them to serializable dictionaries"""
         try:
-            files = await fetch_pr_files(
+            github_files = await fetch_pr_files(
                 state["repo_url"], 
                 state["pr_number"], 
                 state.get("github_token")
             )
-            state["files"] = files
+            
+            # Convert GitHub File objects to serializable dictionaries
+            serializable_files = []
+            for file in github_files:
+                file_dict = {
+                    "sha": file.sha,
+                    "patch": file.patch,
+                    "status": file.status,
+                    "changes": file.changes,
+                    "raw_url": file.raw_url,
+                    "blob_url": file.blob_url,
+                    "filename": file.filename,
+                    "additions": file.additions,
+                    "deletions": file.deletions,
+                    "contents_url": file.contents_url
+                }
+                serializable_files.append(file_dict)
+                
+            state["files"] = serializable_files
         except Exception as e:
             state["error"] = str(e)
             state["status"] = "failed"
             state["completed_at"] = datetime.utcnow().isoformat()            
         
         return state
-    
+
     async def fetch_all_file_contents(state: CodeReviewState) -> CodeReviewState:
         """Fetch the full content of all files in the PR"""
         try:
             file_contents = {}
-            files = state["files"]
+            files = state["files"]  
             token = state.get("github_token")
             
             # Process all files
             for file in files:
                 # Skip files that were deleted in the PR
-                if file.status == "removed":
-                    file_contents[file.filename] = ""
+                if file["status"] == "removed":
+                    file_contents[file["filename"]] = ""
                     continue
                 
                 # Fetch the full content of the file
-                content = await fetch_file_content(file.raw_url, token)
-                file_contents[file.filename] = content
+                content = await fetch_file_content(file["raw_url"], token)
+                file_contents[file["filename"]] = content
             
             state["file_contents"] = file_contents
         except Exception as e:
@@ -122,7 +140,7 @@ def create_code_review_workflow():
             state["error"] = f"Error fetching file contents: {str(e)}"
             
         return state
-    
+
     async def analyze_files(state: CodeReviewState) -> CodeReviewState:
         """Analyze each file in the PR with both full content and changes"""
         # Create the prompt for comprehensive code analysis
@@ -137,15 +155,15 @@ def create_code_review_workflow():
             
             The changes are marked with a "+" for additions and "-" for deletions in the patch.
             Analyze both the specific changes and how they integrate with the full file.
-                                       
+                                    
             Types of issues:
             - "bug": Potential errors or logical issues
             - "security": Security vulnerabilities
             - "perf": Performance concerns
-                                       
+                                    
             Provide specific, actionable, and structured feedback
-          """)
-                  
+        """)
+                
         analyzed_files = []
         files = state["files"]
         file_contents = state["file_contents"]
@@ -153,15 +171,15 @@ def create_code_review_workflow():
         
         for file in files:
             # Skip deleted files
-            if file.status == "removed":
+            if file["status"] == "removed":
                 continue
             
-            full_content = file_contents.get(file.filename, "")
+            full_content = file_contents.get(file["filename"], "")
             user_message = HumanMessage(content=f"""Full File Content:
             {full_content}
             
             Changes in this PR:
-            {file.patch}
+            {file["patch"]}
             """)
         
             analyzer = llm.with_structured_output(FileAnalysis)
@@ -170,7 +188,7 @@ def create_code_review_workflow():
 
             issues = analysis_dict.get("issues", [])
             analyzed_files.append({
-                "name": file.filename,
+                "name": file["filename"],
                 "issues": issues
             })
             
@@ -181,7 +199,7 @@ def create_code_review_workflow():
                 issue for issue in issues 
                 if issue.get("type") in ["bug", "security"]
             ])
-         
+        
         state["summary"] = summary
         state["analyzed_files"] = analyzed_files
         
