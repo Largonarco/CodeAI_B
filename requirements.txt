@@ -34,6 +34,9 @@ PyGithub
 # Asynchronous HTTP
 aiohttp
 
+# Duck Duck Go Search
+duckduckgo-search
+
 # Type annotations
 typing-extensions
 
